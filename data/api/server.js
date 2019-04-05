@@ -1,9 +1,20 @@
 const express = require("express");
-const db = require("./dbConfig");
+const db = require("../config/dbConfig");
+const cors = require("cors");
+const helmet = require("helmet");
 
+const userRouter = require("./userRouter");
+const authRouter = require("./authRouter");
+
+const restricted = require("../middleware/restricted");
 const server = express();
 
+server.use(helmet());
 server.use(express.json());
+server.use(cors());
+
+server.use("/api/users", restricted, userRouter);
+server.use("/api/auth", authRouter);
 
 //sanity check
 server.get("/", (req, res) => {
@@ -12,7 +23,7 @@ server.get("/", (req, res) => {
     .json({ message: "Server's running, bro. You're not insane at all." });
 });
 
-server.get("/api/monsters", async (req, res) => {
+server.get("/api/monsters", restricted, async (req, res) => {
   try {
     const monsters = await db("monsters");
     res.status(200).json(monsters);
@@ -21,7 +32,7 @@ server.get("/api/monsters", async (req, res) => {
   }
 });
 
-server.get("/api/monsters/:id", async (req, res) => {
+server.get("/api/monsters/:id", restricted, async (req, res) => {
   const { id } = req.params;
 
   try {
